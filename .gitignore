@@ -20,6 +20,10 @@ pkg
 vendor/**/.travis.yml
 vendor/**/.gitignore
 vendor/**/.editorconfig
+vendor/**/.golangci.yml
+vendor/**/appveyor.yml
+vendor/**/circle.yml
 vendor/**/AUTHORS
 vendor/**/AUTHORS.md
 vendor/**/CONTRIBUTORS
+vendor/**/Makefile*

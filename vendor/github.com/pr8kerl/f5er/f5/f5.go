@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jmcvetta/napping"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jmcvetta/napping"
 )
 
 var (
@@ -102,6 +103,7 @@ func (f *Device) InitSession() {
 	if f.Proto == "https" {
 		tsport = http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			Proxy:           http.ProxyFromEnvironment,
 		}
 		clnt = http.Client{Transport: &tsport}
 	} else {
@@ -125,6 +127,19 @@ func (f *Device) InitSession() {
 
 func (f *Device) SetDebug(b bool) {
 	debug = b
+}
+
+func (f *Device) SetTokenAuth(t bool) {
+	debugout := "TOKEN_AUTH"
+	if t {
+		f.AuthMethod = TOKEN
+	} else {
+		f.AuthMethod = BASIC_AUTH
+		debugout = "BASIC_AUTH"
+	}
+	if debug {
+		fmt.Printf("authentication mode: %s\n", debugout)
+	}
 }
 
 func (f *Device) SetStatsPathPrefix(p string) {
@@ -289,21 +304,6 @@ func (f *Device) GetToken() {
 			ExpirationMicros int64  `json:"expirationMicros"`
 		} `json:"token"`
 	}
-
-	// Simply posting LoginData to the login endpoint doesn't seem to work.
-	// I seem to need to set basic auth for the token request
-	// after which I can disable basic auth by killing f.Session.Userinfo
-	// I suspect this is a BIG-IP v11 issue - v12 docs clearly state no basic auth header is required
-	// https://devcentral.f5.com/wiki/iControl.Authentication_with_the_F5_REST_API.ashx?lc=1
-	// can't hurt for now
-	if f.Session.Userinfo == nil {
-		// turn on basic auth for this token request only
-		f.Session.Userinfo = url.UserPassword(f.Username, f.Password)
-	}
-
-	// We need to remove X-F5-Auth-Token header when logging in because the BIG-IP
-	// will look att it first and if it has expired it will return Unathorized
-	f.Session.Header.Del("X-F5-Auth-Token")
 
 	LoginData := map[string]string{"username": f.Username, "password": f.Password, "loginProviderName": "tmos"}
 	byteLogin, err := json.Marshal(LoginData)

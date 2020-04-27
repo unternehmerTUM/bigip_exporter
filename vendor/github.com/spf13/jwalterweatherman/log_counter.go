@@ -10,7 +10,6 @@ import (
 )
 
 type logCounter struct {
-	id      int
 	counter uint64
 }
 
@@ -28,7 +27,6 @@ func (c *logCounter) getCount() uint64 {
 
 func (c *logCounter) Write(p []byte) (n int, err error) {
 	c.incr()
-
 	return len(p), nil
 }
 

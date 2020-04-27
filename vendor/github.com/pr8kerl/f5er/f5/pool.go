@@ -27,12 +27,12 @@ type LBPoolMember struct {
 // a pool member reference - just a link and an array of pool members
 type LBPoolMemberRef struct {
 	Link  string         `json:"link"`
-	Items []LBPoolMember `json":items"`
+	Items []LBPoolMember `json:"items"`
 }
 
 type LBPoolMembers struct {
 	Link  string         `json:"selfLink"`
-	Items []LBPoolMember `json":items"`
+	Items []LBPoolMember `json:"items"`
 }
 
 // used by online/offline
@@ -246,6 +246,33 @@ func (f *Device) ShowPoolMembers(pname string) (error, *LBPoolMembers) {
 		return nil, &res
 	}
 
+}
+
+func (f *Device) ShowPoolMembersStats(pname string) (error, *LBPoolStats) {
+
+	pool := strings.Replace(pname, "/", "~", -1)
+	u := f.Proto + "://" + f.Hostname + "/mgmt/tm/ltm/pool/" + pool + "/members/stats"
+	res := LBPoolStats{}
+
+	err, _ := f.sendRequest(u, GET, nil, &res)
+	if err != nil {
+		return err, nil
+	} else {
+		return nil, &res
+	}
+}
+
+func (f *Device) ShowAllPoolMembersStats() (error, *LBPoolStats) {
+
+	u := f.Proto + "://" + f.Hostname + "/mgmt/tm/ltm/pool/members/stats"
+	res := LBPoolStats{}
+
+	err, _ := f.sendRequest(u, GET, nil, &res)
+	if err != nil {
+		return err, nil
+	} else {
+		return nil, &res
+	}
 }
 
 func (f *Device) AddPoolMembers(pname string, body *json.RawMessage) (error, *LBPoolMembers) {

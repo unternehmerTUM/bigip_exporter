@@ -39,6 +39,7 @@ func NewContext(rootLevel Level) *Context {
 		level:   rootLevel,
 		context: context,
 	}
+	context.root.parent = context.root
 	context.modules[""] = context.root
 	return context
 }
@@ -156,6 +157,14 @@ func (c *Context) AddWriter(name string, writer Writer) error {
 	return nil
 }
 
+// Writer returns the named writer if one exists.
+// If there is not a writer with the specified name, nil is returned.
+func (c *Context) Writer(name string) Writer {
+	c.writersMutex.Lock()
+	defer c.writersMutex.Unlock()
+	return c.writers[name]
+}
+
 // RemoveWriter remotes the specified writer. If a writer is not found with
 // the specified name an error is returned. The writer that was removed is also
 // returned.
@@ -195,4 +204,22 @@ func (c *Context) ResetWriters() {
 	c.writersMutex.Lock()
 	defer c.writersMutex.Unlock()
 	c.writers = make(map[string]Writer)
+}
+
+// ConfigureLoggers configures loggers according to the given string
+// specification, which specifies a set of modules and their associated
+// logging levels.  Loggers are colon- or semicolon-separated; each
+// module is specified as <modulename>=<level>.  White space outside of
+// module names and levels is ignored.  The root module is specified
+// with the name "<root>".
+//
+// An example specification:
+//	`<root>=ERROR; foo.bar=WARNING`
+func (c *Context) ConfigureLoggers(specification string) error {
+	config, err := ParseConfigString(specification)
+	if err != nil {
+		return err
+	}
+	c.ApplyConfig(config)
+	return nil
 }
